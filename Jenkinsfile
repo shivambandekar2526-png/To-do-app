@@ -10,6 +10,8 @@ pipeline {
         SUPABASE_BUCKET = 'To-Do data'
         PORT = '5000'
         PYTHONUNBUFFERED = '1'
+        DOCKER_HOST = 'npipe:////./pipe/docker_engine'
+        PATH = "C:\\Users\\arya\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin;${env.PATH}"
     }
 
     stages {
@@ -25,6 +27,8 @@ pipeline {
                 bat 'python --version'
                 bat 'node --version'
                 bat 'npm --version'
+                bat 'docker --version'
+                bat 'docker compose version'
             }
         }
 
@@ -75,11 +79,19 @@ pipeline {
                 }
             }
         }
+
+        stage('Docker Build') {
+            steps {
+                echo 'Building Docker images after successful tests...'
+                bat 'docker compose build'
+                echo 'Docker images built successfully.'
+            }
+        }
     }
 
     post {
         success {
-            echo 'CI PASSED: Validation and integration tests completed.'
+            echo 'CI PASSED: Validation, tests, and Docker build completed.'
         }
 
         failure {
