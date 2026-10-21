@@ -87,11 +87,46 @@ pipeline {
                 echo 'Docker images built successfully.'
             }
         }
+
+        stage('Docker Push') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    script {
+                        def shortCommit = env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : 'latest'
+                        echo "Logging into Docker Hub as ${env.DOCKER_USER}..."
+                        bat 'echo %DOCKER_PASS%| docker login -u %DOCKER_USER% --password-stdin'
+
+                        echo "Tagging images with commit ${shortCommit} and latest..."
+                        bat "docker tag to-doapp-backend:latest %DOCKER_USER%/todo-backend:${shortCommit}"
+                        bat "docker tag to-doapp-backend:latest %DOCKER_USER%/todo-backend:latest"
+                        bat "docker tag to-doapp-frontend:latest %DOCKER_USER%/todo-frontend:${shortCommit}"
+                        bat "docker tag to-doapp-frontend:latest %DOCKER_USER%/todo-frontend:latest"
+
+                        echo "Pushing backend images to Docker Hub..."
+                        bat "docker push %DOCKER_USER%/todo-backend:${shortCommit}"
+                        bat "docker push %DOCKER_USER%/todo-backend:latest"
+
+                        echo "Pushing frontend images to Docker Hub..."
+                        bat "docker push %DOCKER_USER%/todo-frontend:${shortCommit}"
+                        bat "docker push %DOCKER_USER%/todo-frontend:latest"
+
+                        echo "Logging out from Docker Hub..."
+                        bat 'docker logout'
+                    }
+                }
+            }
+        }
     }
 
     post {
         success {
-            echo 'CI PASSED: Validation, tests, and Docker build completed.'
+            echo 'CI/CD PASSED: Validation, tests, Docker build, and Docker Hub push completed.'
         }
 
         failure {
