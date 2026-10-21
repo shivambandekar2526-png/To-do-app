@@ -1,33 +1,61 @@
 pipeline {
     agent any
 
+    options {
+        timestamps()
+    }
+
     stages {
         stage('Checkout') {
             steps {
-                echo 'To-do app source code is available'
+                checkout scm
+                echo 'Source code checked out successfully.'
             }
         }
 
-        stage('Build') {
+        stage('Check Tools') {
             steps {
-                echo 'Building the To-do app'
+                bat 'python --version'
+                bat 'node --version'
+                bat 'npm --version'
             }
         }
 
-        stage('Test') {
+        stage('Install Python Dependencies') {
             steps {
-                echo 'Pipeline test completed'
+                bat 'python -m pip install -r backend/requirements.txt'
+            }
+        }
+
+        stage('Install Node Dependencies') {
+            steps {
+                bat 'npm install --prefix frontend'
+            }
+        }
+
+        stage('Validate Python') {
+            steps {
+                bat 'python -m compileall -q backend'
+                bat 'python -m py_compile test_app.py run.py'
+                echo 'Python validation passed.'
+            }
+        }
+
+        stage('Validate JavaScript') {
+            steps {
+                bat 'node --check frontend/server.js'
+                echo 'JavaScript validation passed.'
             }
         }
     }
 
     post {
         success {
-            echo 'SUCCESS: Jenkins pipeline completed!'
+            echo 'CI PASSED: Dependencies installed and code validation completed.'
         }
 
         failure {
-            echo 'FAILED: Check the console output.'
+            echo 'CI FAILED: Check Console Output for the first error.'
         }
     }
 }
