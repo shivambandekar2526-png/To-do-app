@@ -132,6 +132,7 @@ pipeline {
                 ]) {
                     echo 'Deploying application using published Docker Hub images...'
                     bat 'docker-compose -f docker-compose.prod.yml pull'
+                    bat 'docker rm -f todo-backend todo-frontend || ver >nul'
                     bat 'docker-compose -f docker-compose.prod.yml up -d'
 
                     echo 'Verifying post-deployment application health...'

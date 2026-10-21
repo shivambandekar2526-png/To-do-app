@@ -1,3 +1,5 @@
+name: todo-app
+
 services:
   backend:
     image: padwalarya/todo-backend:latest
