@@ -9,9 +9,14 @@ def test_full_application():
     print(">>> 1. Starting Flask backend and Node.js server...")
     root_dir = os.path.dirname(os.path.abspath(__file__))
     flask_proc = subprocess.Popen([sys.executable, 'app.py'], cwd=os.path.join(root_dir, 'backend'))
-    time.sleep(2)
-    node_proc = subprocess.Popen(['node', 'server.js'], cwd=os.path.join(root_dir, 'frontend'))
-    time.sleep(2)
+    node_env = dict(os.environ, PORT='3000')
+    node_proc = subprocess.Popen(['node', 'server.js'], cwd=os.path.join(root_dir, 'frontend'), env=node_env)
+    for _ in range(15):
+        try:
+            with urllib.request.urlopen("http://127.0.0.1:5000/api/status", timeout=1):
+                break
+        except Exception:
+            time.sleep(1)
 
     try:
         # 1. Test Node serves HTML
@@ -71,8 +76,13 @@ def test_full_application():
         print("   Restarting Flask and Node.js servers anew...")
         flask_proc = subprocess.Popen([sys.executable, 'app.py'], cwd=os.path.join(root_dir, 'backend'))
         time.sleep(2)
-        node_proc = subprocess.Popen(['node', 'server.js'], cwd=os.path.join(root_dir, 'frontend'))
-        time.sleep(2)
+        node_proc = subprocess.Popen(['node', 'server.js'], cwd=os.path.join(root_dir, 'frontend'), env=node_env)
+        for _ in range(15):
+            try:
+                with urllib.request.urlopen("http://127.0.0.1:5000/api/status", timeout=1):
+                    break
+            except Exception:
+                time.sleep(1)
 
         # 6. Fetch todos after restart
         print(">>> 7. Fetching tasks after restart to verify persistence from Supabase...")
