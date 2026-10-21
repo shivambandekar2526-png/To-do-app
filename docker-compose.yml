@@ -1,0 +1,25 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: todo-backend
+    ports:
+      - "5000:5000"
+    environment:
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_KEY: ${SUPABASE_KEY}
+      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY}
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: todo-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+      FLASK_BACKEND_URL: http://backend:5000
+    depends_on:
+      - backend
+    restart: unless-stopped
