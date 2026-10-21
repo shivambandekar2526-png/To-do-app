@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow • Persistent Supabase To-Do</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="app-logo">
+                    <i data-lucide="check-circle-2" class="logo-icon"></i>
+                    <div>
+                        <h1 class="logo-text">TaskFlow</h1>
+                        <span class="logo-subtitle">Python Flask & Node.js & Supabase</span>
+                    </div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div id="cloudStatusBadge" class="cloud-status-badge status-loading" title="Supabase Storage Sync Status">
+                    <span class="status-indicator"></span>
+                    <span id="cloudStatusText">Connecting to Supabase...</span>
+                    <button id="refreshSyncBtn" class="icon-btn-sm" title="Force Sync with Supabase bucket">
+                        <i data-lucide="refresh-cw"></i>
+                    </button>
+                </div>
+                <button id="openNewTaskModalBtn" class="btn btn-primary">
+                    <i data-lucide="plus"></i>
+                    <span>New Task</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Bar -->
+        <section class="stats-section">
+            <div class="stat-card">
+                <div class="stat-icon-wrapper total-icon">
+                    <i data-lucide="layers"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">Total Tasks</span>
+                    <span id="totalTasksCount" class="stat-value">0</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon-wrapper pending-icon">
+                    <i data-lucide="clock"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">Pending</span>
+                    <span id="pendingTasksCount" class="stat-value">0</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon-wrapper completed-icon">
+                    <i data-lucide="check-check"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">Completed</span>
+                    <span id="completedTasksCount" class="stat-value">0</span>
+                </div>
+            </div>
+            <div class="stat-card progress-card">
+                <div class="progress-header">
+                    <span class="stat-label">Progress</span>
+                    <span id="progressPercent" class="stat-progress-num">0%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div id="progressBarFill" class="progress-bar-fill" style="width: 0%;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filter & Search Toolbar -->
+        <section class="toolbar-section">
+            <div class="search-box">
+                <i data-lucide="search" class="search-icon"></i>
+                <input type="text" id="searchInput" placeholder="Search tasks by title, description or tags..." />
+                <button id="clearSearchBtn" class="clear-search-btn hidden" title="Clear search">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <div class="filters-row">
+                <!-- Status Tabs -->
+                <div class="status-tabs">
+                    <button class="status-tab active" data-status="all">All</button>
+                    <button class="status-tab" data-status="active">Active</button>
+                    <button class="status-tab" data-status="completed">Completed</button>
+                </div>
+
+                <div class="dropdown-filters">
+                    <!-- Category Filter -->
+                    <div class="select-wrapper">
+                        <i data-lucide="tag" class="select-icon"></i>
+                        <select id="categoryFilter" aria-label="Filter by category">
+                            <option value="All">All Categories</option>
+                            <option value="Work">Work</option>
+                            <option value="Personal">Personal</option>
+                            <option value="Shopping">Shopping</option>
+                            <option value="Health">Health</option>
+                            <option value="Learning">Learning</option>
+                            <option value="Finance">Finance</option>
+                            <option value="General">General</option>
+                        </select>
+                    </div>
+
+                    <!-- Priority Filter -->
+                    <div class="select-wrapper">
+                        <i data-lucide="flag" class="select-icon"></i>
+                        <select id="priorityFilter" aria-label="Filter by priority">
+                            <option value="All">All Priorities</option>
+                            <option value="Urgent">Urgent</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div>
+
+                    <button id="clearCompletedBtn" class="btn btn-outline-danger" title="Remove completed tasks">
+                        <i data-lucide="trash-2"></i>
+                        <span>Clear Completed</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Storage Info Banner -->
+        <div class="storage-banner">
+            <div class="storage-banner-content">
+                <i data-lucide="shield-check" class="banner-icon"></i>
+                <span><strong>Persistent Cloud Storage:</strong> Stored in Supabase bucket <code>To-Do data</code>. All your tasks remain preserved even if the server is stopped, restarted, or rebooted.</span>
+            </div>
+            <div id="lastSyncLabel" class="last-sync-label">Last synced: Just now</div>
+        </div>
+
+        <!-- Task List Area -->
+        <main class="tasks-main">
+            <!-- Loading State -->
+            <div id="tasksLoading" class="tasks-loading">
+                <div class="spinner"></div>
+                <p>Loading tasks from Supabase...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div id="tasksEmpty" class="tasks-empty hidden">
+                <div class="empty-icon-circle">
+                    <i data-lucide="inbox"></i>
+                </div>
+                <h3 id="emptyTitle">No tasks found</h3>
+                <p id="emptySubtitle">Create a new task to get started, or adjust your search filters.</p>
+                <button id="emptyActionBtn" class="btn btn-primary">
+                    <i data-lucide="plus"></i> Add First Task
+                </button>
+            </div>
+
+            <!-- Tasks Container -->
+            <ul id="taskList" class="task-list"></ul>
+        </main>
+    </div>
+
+    <!-- Add / Edit Task Modal -->
+    <div id="taskModal" class="modal-overlay hidden">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2 id="modalTitle">Create New Task</h2>
+                <button id="closeModalBtn" class="modal-close-btn" aria-label="Close modal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="taskForm">
+                <input type="hidden" id="taskId" value="" />
+                
+                <div class="form-group">
+                    <label for="taskTitleInput">Task Title <span class="required">*</span></label>
+                    <input type="text" id="taskTitleInput" placeholder="What needs to be done?" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="taskDescInput">Description / Notes</label>
+                    <textarea id="taskDescInput" rows="3" placeholder="Add additional details or notes..."></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="taskPriorityInput">Priority</label>
+                        <select id="taskPriorityInput">
+                            <option value="Low">Low</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="High">High</option>
+                            <option value="Urgent">Urgent</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group half">
+                        <label for="taskCategoryInput">Category</label>
+                        <select id="taskCategoryInput">
+                            <option value="Work">Work</option>
+                            <option value="Personal">Personal</option>
+                            <option value="Shopping">Shopping</option>
+                            <option value="Health">Health</option>
+                            <option value="Learning">Learning</option>
+                            <option value="Finance">Finance</option>
+                            <option value="General" selected>General</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="taskDueDateInput">Due Date</label>
+                        <input type="date" id="taskDueDateInput" />
+                    </div>
+
+                    <div class="form-group half">
+                        <label for="taskTagsInput">Tags (comma separated)</label>
+                        <input type="text" id="taskTagsInput" placeholder="frontend, urgent, project" />
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" id="cancelModalBtn" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" id="saveTaskBtn" class="btn btn-primary">
+                        <i data-lucide="save"></i>
+                        <span>Save Task</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>

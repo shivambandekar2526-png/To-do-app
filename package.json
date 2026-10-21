@@ -1,0 +1,12 @@
+{
+  "name": "persistent-todo-app",
+  "version": "1.0.0",
+  "description": "Full-stack persistent To-Do application with Python Flask, Node.js, and Supabase Storage",
+  "scripts": {
+    "start": "python run.py",
+    "backend": "python backend/app.py",
+    "frontend": "node frontend/server.js"
+  },
+  "author": "",
+  "license": "ISC"
+}
