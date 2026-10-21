@@ -15,7 +15,7 @@
       "id": 1,
       "title": "Backend Service Status",
       "type": "stat",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
       "targets": [
         {
           "expr": "up{job=\"todo-backend\"}",
@@ -43,7 +43,7 @@
       "id": 2,
       "title": "Prometheus Target Health",
       "type": "stat",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
       "targets": [
         {
           "expr": "up{job=\"prometheus\"}",
@@ -64,7 +64,7 @@
       "id": 3,
       "title": "Total HTTP Requests Count",
       "type": "stat",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
       "targets": [
         {
           "expr": "sum(flask_http_request_total)",
@@ -84,7 +84,7 @@
       "id": 4,
       "title": "Request Throughput (req/sec by endpoint)",
       "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
       "targets": [
         {
           "expr": "sum by (handler, status) (rate(flask_http_request_total[1m]))",
@@ -99,7 +99,7 @@
       "id": 5,
       "title": "Average Request Latency",
       "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
       "targets": [
         {
           "expr": "sum(rate(flask_http_request_duration_seconds_sum[1m])) / sum(rate(flask_http_request_duration_seconds_count[1m]))",
