@@ -122,15 +122,55 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'supabase-url', variable: 'SUPABASE_URL'),
+                    string(credentialsId: 'supabase-key', variable: 'SUPABASE_KEY'),
+                    string(credentialsId: 'supabase-publishable-key', variable: 'SUPABASE_PUBLISHABLE_KEY')
+                ]) {
+                    echo 'Deploying application using published Docker Hub images...'
+                    bat 'docker-compose -f docker-compose.prod.yml pull'
+                    bat 'docker-compose -f docker-compose.prod.yml up -d'
+
+                    echo 'Verifying post-deployment application health...'
+                    powershell '''
+                        $retry = 0
+                        $maxRetries = 10
+                        $deployed = $false
+                        while ($retry -lt $maxRetries) {
+                            Start-Sleep -Seconds 3
+                            try {
+                                $res = Invoke-RestMethod -Uri "http://localhost:3000/api/status" -TimeoutSec 5
+                                if ($res.status -eq 'online' -and $res.supabase_connected -eq $true) {
+                                    Write-Output "Deployment Healthy: Frontend and Backend online with Supabase connected!"
+                                    $deployed = $true
+                                    break
+                                }
+                            } catch {
+                                Write-Output "Waiting for services to become healthy... (Attempt $($retry + 1)/$maxRetries)"
+                            }
+                            $retry++
+                        }
+                        if (-not $deployed) {
+                            Write-Error "Deployment verification failed: Service did not report healthy status within timeout."
+                            exit 1
+                        }
+                    '''
+                    echo 'Application deployed and verified successfully.'
+                }
+            }
+        }
     }
 
     post {
         success {
-            echo 'CI/CD PASSED: Validation, tests, Docker build, and Docker Hub push completed.'
+            echo 'CI/CD PASSED: Validation, tests, Docker build, Docker Hub push, and Deployment completed.'
         }
 
         failure {
-            echo 'CI FAILED: Check Console Output for the failing stage.'
+            echo 'CI/CD FAILED: Check Console Output for the failing stage.'
         }
     }
 }
