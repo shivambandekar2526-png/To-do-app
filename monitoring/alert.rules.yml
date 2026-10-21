@@ -1,0 +1,29 @@
+groups:
+  - name: todo_application_alerts
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 15s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service target {{ $labels.instance }} is down"
+          description: "Target {{ $labels.job }} at {{ $labels.instance }} has been unreachable for more than 15 seconds."
+
+      - alert: HighHttpErrorRate
+        expr: rate(flask_http_request_total{status=~"5.."}[1m]) > 0
+        for: 15s
+        labels:
+          severity: warning
+        annotations:
+          summary: "High 5xx error rate on {{ $labels.instance }}"
+          description: "The backend is returning HTTP 5xx errors."
+
+      - alert: HighRequestLatency
+        expr: rate(flask_http_request_duration_seconds_sum[1m]) / rate(flask_http_request_duration_seconds_count[1m]) > 1.5
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Elevated latency on {{ $labels.instance }}"
+          description: "Average request latency is exceeding 1.5 seconds."

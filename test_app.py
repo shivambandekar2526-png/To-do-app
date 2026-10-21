@@ -35,6 +35,13 @@ def test_full_application():
             assert data.get("bucket") == "To-Do data", "Bucket mismatch!"
             print("   [OK] Supabase connected to bucket 'To-Do data'!")
 
+        # 2b. Test Prometheus metrics endpoint
+        print(">>> 3b. Testing Prometheus metrics endpoint (http://127.0.0.1:5000/metrics)...")
+        with urllib.request.urlopen("http://127.0.0.1:5000/metrics") as resp:
+            metrics_data = resp.read().decode('utf-8')
+            assert 'flask_http_request' in metrics_data or 'process_cpu_seconds_total' in metrics_data, "Prometheus metrics not found!"
+            print("   [OK] Prometheus metrics endpoint is active and returning metrics!")
+
         # 3. Create a new task
         print(">>> 4. Testing Task Creation (POST /api/todos)...")
         req_body = json.dumps({

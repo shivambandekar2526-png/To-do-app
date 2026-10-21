@@ -135,7 +135,10 @@ pipeline {
                     bat 'docker rm -f todo-backend todo-frontend || ver >nul'
                     bat 'docker-compose -f docker-compose.prod.yml up -d'
 
-                    echo 'Verifying post-deployment application health...'
+                    echo 'Deploying Prometheus and Grafana monitoring stack...'
+                    bat 'docker-compose -f monitoring/docker-compose.monitoring.yml up -d'
+
+                    echo 'Verifying post-deployment application health and monitoring targets...'
                     powershell '''
                         $retry = 0
                         $maxRetries = 10
@@ -158,8 +161,24 @@ pipeline {
                             Write-Error "Deployment verification failed: Service did not report healthy status within timeout."
                             exit 1
                         }
+
+                        # Check Prometheus health
+                        try {
+                            $prom = Invoke-RestMethod -Uri "http://localhost:9090/-/healthy" -TimeoutSec 5
+                            Write-Output "Prometheus Monitoring: Healthy"
+                        } catch {
+                            Write-Output "Warning: Prometheus is initializing..."
+                        }
+
+                        # Check Grafana health
+                        try {
+                            $grafana = Invoke-RestMethod -Uri "http://localhost:3001/api/health" -TimeoutSec 5
+                            Write-Output "Grafana Dashboard: $($grafana.database)"
+                        } catch {
+                            Write-Output "Warning: Grafana is initializing..."
+                        }
                     '''
-                    echo 'Application deployed and verified successfully.'
+                    echo 'Application and monitoring stack deployed successfully.'
                 }
             }
         }

@@ -1,11 +1,16 @@
 import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from prometheus_flask_exporter import PrometheusMetrics
 from supabase_service import SupabaseTodoService
 
 app = Flask(__name__)
 # Enable CORS for all routes (allows requests from frontend server)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+# Prometheus metrics instrumentation
+metrics = PrometheusMetrics(app)
+metrics.info('app_info', 'Application info', version='1.0.0')
 
 service = SupabaseTodoService()
 
