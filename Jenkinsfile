@@ -28,7 +28,7 @@ pipeline {
                 bat 'node --version'
                 bat 'npm --version'
                 bat 'docker --version'
-                bat 'docker compose version'
+                bat 'docker-compose version'
             }
         }
 
@@ -83,7 +83,7 @@ pipeline {
         stage('Docker Build') {
             steps {
                 echo 'Building Docker images after successful tests...'
-                bat 'docker compose build'
+                bat 'docker-compose build'
                 echo 'Docker images built successfully.'
             }
         }
