@@ -3,6 +3,13 @@ pipeline {
 
     options {
         timestamps()
+        disableConcurrentBuilds()
+    }
+
+    environment {
+        SUPABASE_BUCKET = 'To-Do data'
+        PORT = '5000'
+        PYTHONUNBUFFERED = '1'
     }
 
     stages {
@@ -47,15 +54,36 @@ pipeline {
                 echo 'JavaScript validation passed.'
             }
         }
+
+        stage('Integration Test') {
+            steps {
+                withCredentials([
+                    string(
+                        credentialsId: 'supabase-url',
+                        variable: 'SUPABASE_URL'
+                    ),
+                    string(
+                        credentialsId: 'supabase-key',
+                        variable: 'SUPABASE_KEY'
+                    ),
+                    string(
+                        credentialsId: 'supabase-publishable-key',
+                        variable: 'SUPABASE_PUBLISHABLE_KEY'
+                    )
+                ]) {
+                    bat 'python test_app.py'
+                }
+            }
+        }
     }
 
     post {
         success {
-            echo 'CI PASSED: Dependencies installed and code validation completed.'
+            echo 'CI PASSED: Validation and integration tests completed.'
         }
 
         failure {
-            echo 'CI FAILED: Check Console Output for the first error.'
+            echo 'CI FAILED: Check Console Output for the failing stage.'
         }
     }
 }
